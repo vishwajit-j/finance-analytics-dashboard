@@ -42,3 +42,40 @@ Sharpe Ratio ≈ 0.8274
 - Generalize optimizer for N assets
 - Move optimizer into dedicated portfolio module
 - Improve modular structure
+
+
+## Portfolio Optimization (Monte Carlo Simulation)
+
+### What Was Implemented
+
+- Monte Carlo portfolio optimization using random weight generation
+- Weight normalization to ensure full capital allocation (sum of weights = 1)
+- Sharpe Ratio maximization as optimization objective
+- Efficient Frontier visualization (Risk vs Return scatter plot)
+- Highlighting optimal Sharpe portfolio on the frontier
+
+### System Architecture
+
+- `data_loader.py` → Data fetching and preprocessing
+- `metrics.py` → Financial calculations (returns, volatility, correlation, Sharpe, etc.)
+- `portfolio.py` → Optimization logic (Monte Carlo simulation)
+- `plots.py` → Visualization layer (Efficient Frontier)
+- `app.py` → Controller / orchestration layer
+
+Separation of concerns was enforced to maintain clean modular structure.
+
+### Key Observations & Insights
+
+- Efficient Frontier shape is determined by asset return, volatility, and correlation — not by risk-free rate.
+- Changing the risk-free rate does not change the frontier shape but can shift the optimal Sharpe portfolio.
+- Maximum Sharpe portfolio is not necessarily the highest return portfolio.
+- High return without volatility control leads to lower risk-adjusted performance.
+- Diversification benefits arise from lower correlation between assets.
+
+### Architectural Improvements
+
+- Removed financial calculations from `app.py`
+- Centralized statistical computations inside `metrics.py`
+- Isolated optimization logic inside `portfolio.py`
+- Maintained plotting logic strictly inside `plots.py`
+- Established clean, scalable backend structure for future extensions (constraints, efficient frontier refinement, additional metrics)
