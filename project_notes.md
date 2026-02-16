@@ -79,3 +79,20 @@ Separation of concerns was enforced to maintain clean modular structure.
 - Isolated optimization logic inside `portfolio.py`
 - Maintained plotting logic strictly inside `plots.py`
 - Established clean, scalable backend structure for future extensions (constraints, efficient frontier refinement, additional metrics)
+
+
+### Portfolio Engine Enhancements
+
+- Added Minimum Volatility portfolio tracking
+- Added Maximum Return portfolio tracking
+- Implemented Sortino ratio optimization
+- Extended return structure from optimize_portfolio()
+- Verified architecture separation:
+  - metrics → calculations
+  - portfolio → optimization logic
+  - plots → visualization
+  - app → controller
+
+Observation:
+- Max Return portfolio ≠ Max Sharpe
+- Sortino portfolio can differ due to downside-only risk penalization
