@@ -97,3 +97,56 @@ def optimize_portfolio(returns, risk_free_rate=0.04, simulations=5000):
 )
 
 
+
+def walk_forward_optimization(returns, train_years=2, test_months=6, risk_free_rate=0.04):
+
+    import pandas as pd
+
+    walk_forward_returns = []
+
+    start_date = returns.index.min()
+    end_date = returns.index.max()
+
+    current_start = start_date
+
+    while True:
+
+        train_end = current_start + pd.DateOffset(years=train_years)
+        test_end = train_end + pd.DateOffset(months=test_months)
+
+        if test_end > end_date:
+            break
+
+        train_data = returns[(returns.index >= current_start) & (returns.index < train_end)]
+        test_data = returns[(returns.index >= train_end) & (returns.index < test_end)]
+
+        if len(train_data) == 0 or len(test_data) == 0:
+            break
+
+        (
+            best_weights,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _
+        ) = optimize_portfolio(train_data, risk_free_rate=risk_free_rate, simulations=3000)
+
+        test_portfolio_returns = test_data.dot(best_weights)
+
+        walk_forward_returns.append(test_portfolio_returns)
+
+        current_start = current_start + pd.DateOffset(months=test_months)
+
+    if len(walk_forward_returns) == 0:
+        return None
+
+    return pd.concat(walk_forward_returns)
+
