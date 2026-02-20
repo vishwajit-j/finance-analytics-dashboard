@@ -129,3 +129,42 @@ def train_test_split_returns(returns, split_date):
     test_returns = returns[returns.index >= split_date]
 
     return train_returns, test_returns
+
+
+def calculate_beta(strategy_returns, benchmark_returns):
+    covariance = np.cov(strategy_returns, benchmark_returns)[0][1]
+    benchmark_variance = np.var(benchmark_returns)
+    return covariance / benchmark_variance
+
+
+def calculate_alpha(strategy_returns, benchmark_returns, risk_free_rate):
+    beta = calculate_beta(strategy_returns, benchmark_returns)
+
+    strategy_annual = strategy_returns.mean() * 252
+    benchmark_annual = benchmark_returns.mean() * 252
+
+    alpha = strategy_annual - (
+        risk_free_rate + beta * (benchmark_annual - risk_free_rate)
+    )
+
+    return alpha
+
+
+def calculate_information_ratio(strategy_returns, benchmark_returns):
+    active_returns = strategy_returns - benchmark_returns
+    tracking_error = active_returns.std() * np.sqrt(252)
+
+    if tracking_error == 0:
+        return 0
+
+    return (active_returns.mean() * 252) / tracking_error
+
+def capm_regression(strategy_returns, benchmark_returns):
+    import statsmodels.api as sm
+
+    X = sm.add_constant(benchmark_returns)  # adds intercept
+    y = strategy_returns
+
+    model = sm.OLS(y, X).fit()
+
+    return model

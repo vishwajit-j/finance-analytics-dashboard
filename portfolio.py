@@ -1,6 +1,11 @@
 import numpy as np
 
-def optimize_portfolio(returns, risk_free_rate=0.04, simulations=5000):
+def optimize_portfolio(
+    returns,
+    risk_free_rate=0.04,
+    simulations=5000,
+    max_weight=1.0
+):
 
     num_assets = returns.shape[1]
 
@@ -34,6 +39,10 @@ def optimize_portfolio(returns, risk_free_rate=0.04, simulations=5000):
 
         weights = np.random.random(num_assets)
         weights = weights / np.sum(weights)
+
+        # Enforce max weight constraint
+        if np.any(weights > max_weight):
+            continue
 
         portfolio_returns = returns.dot(weights)
 
@@ -137,7 +146,12 @@ def walk_forward_optimization(returns, train_years=2, test_months=6, risk_free_r
             _,
             _,
             _
-        ) = optimize_portfolio(train_data, risk_free_rate=risk_free_rate, simulations=3000)
+        ) = optimize_portfolio(
+            train_data,
+            risk_free_rate=risk_free_rate,
+            simulations=3000,
+            max_weight=0.25
+        )
 
         test_portfolio_returns = test_data.dot(best_weights)
 

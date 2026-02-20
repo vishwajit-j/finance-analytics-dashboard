@@ -93,6 +93,58 @@ Separation of concerns was enforced to maintain clean modular structure.
   - plots → visualization
   - app → controller
 
-Observation:
+## Observation:
 - Max Return portfolio ≠ Max Sharpe
 - Sortino portfolio can differ due to downside-only risk penalization
+
+
+📅 Update — Phase 2 Progress
+✅ Today’s Progress
+
+Expanded asset universe to multi-asset portfolio:
+
+US Equity, International Equity, Bonds, Commodities, Energy, Crypto
+
+Implemented full Out-of-Sample (OOS) evaluation framework
+
+Added Walk-Forward Optimization (rolling re-training & testing)
+
+Integrated advanced risk metrics:
+
+Sharpe, Sortino, Calmar
+
+VaR / CVaR
+
+Maximum Drawdown
+
+Added Relative Performance analytics:
+
+Beta, Alpha
+
+Information Ratio
+
+CAPM Regression (OLS summary)
+
+Preserved clean modular architecture:
+
+metrics.py → calculations
+
+portfolio.py → optimization logic
+
+plots.py → visualization
+
+app.py → orchestration
+
+The system is now a multi-asset, risk-evaluated portfolio engine with OOS validation and walk-forward robustness testing.
+
+🔜 Next Steps (Phase 3)
+
+Rolling Beta (time-varying market exposure)
+
+Risk Contribution analysis (volatility attribution per asset)
+
+Correlation heatmap visualization
+
+Further robustness diagnostics
+
+Goal: Upgrade from optimizer → full quantitative risk analytics system.

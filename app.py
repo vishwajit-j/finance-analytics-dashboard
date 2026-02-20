@@ -16,12 +16,18 @@ from plots import plot_rolling_metric
 from metrics import generate_portfolio_summary
 from metrics import calculate_sharpe, calculate_sortino
 from metrics import train_test_split_returns
+from metrics import calculate_beta, calculate_alpha, calculate_information_ratio
+from metrics import capm_regression
 
 
 
 def main():
 
-    tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "SPY"]
+    tickers = [
+    "AAPL", "MSFT", "GOOGL", "AMZN",
+    "GLD", "TLT", "XLE", "EEM", "BTC-USD",
+    "SPY"
+    ]
     start_date = "2020-01-01"
     end_date = "2024-12-31"
     risk_free_rate = 0.04
@@ -70,7 +76,8 @@ def main():
     ) = optimize_portfolio(
         train_assets,
         risk_free_rate=risk_free_rate,
-        simulations=5000
+        simulations=10000,
+        max_weight=0.25
     )
 
     # ----------------------------
@@ -156,6 +163,48 @@ def main():
 
     print("\n================ OOS Portfolio Comparison ================\n")
     print(summary_df.round(4))
+
+
+    # ----------------------------
+    # Relative Performance vs SPY
+    # ----------------------------
+
+    beta = calculate_beta(best_portfolio_returns, test_benchmark)
+    alpha = calculate_alpha(best_portfolio_returns, test_benchmark, risk_free_rate)
+    info_ratio = calculate_information_ratio(best_portfolio_returns, test_benchmark)
+
+    print("\n================ Relative Performance ================")
+    print(f"Beta: {beta:.4f}")
+    print(f"Alpha: {alpha:.4f}")
+    print(f"Information Ratio: {info_ratio:.4f}")
+
+
+    # ----------------------------
+    # CAPM Regression
+    # ----------------------------
+
+    capm_model = capm_regression(best_portfolio_returns, test_benchmark)
+
+    print("\n================ CAPM Regression Results ================")
+    print(capm_model.summary())
+
+
+    # ----------------------------
+    # Strategy vs Benchmark (OOS)
+    # ----------------------------
+
+    strategy_cumulative = (1 + best_portfolio_returns).cumprod()
+    benchmark_cumulative = (1 + test_benchmark).cumprod()
+
+    plt.figure(figsize=(10,5))
+    plt.plot(strategy_cumulative, label="Strategy (Max Sharpe)")
+    plt.plot(benchmark_cumulative, label="SPY Benchmark")
+    plt.title("Strategy vs SPY (Out-of-Sample)")
+    plt.xlabel("Date")
+    plt.ylabel("Growth of $1")
+    plt.legend()
+    plt.show()
+
 
     # ----------------------------
     # Walk Forward Optimization
