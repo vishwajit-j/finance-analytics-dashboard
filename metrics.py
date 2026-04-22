@@ -3,7 +3,7 @@ import pandas as pd
 
 def calculate_daily_returns(data):
     close_prices = data["Close"]
-    return close_prices.pct_change().dropna()
+    return close_prices.pct_change(fill_method=None).dropna()
 
 
 
@@ -105,20 +105,27 @@ def calculate_rolling_sharpe(portfolio_returns, risk_free_rate=0.04, window=126)
 
 
 
+def generate_portfolio_summary(returns):
+    import numpy as np
 
-def generate_portfolio_summary(portfolios_dict):
-    """
-    portfolios_dict format:
-    {
-        "Max Sharpe": {metric_name: value, ...},
-        "Min Volatility": {...},
-        "Max Return": {...}
+    if isinstance(returns, pd.DataFrame):
+        returns = returns.iloc[:, 0]
+
+    annual_return = returns.mean() * 252
+    volatility = returns.std() * np.sqrt(252)
+    sharpe = annual_return / volatility if volatility != 0 else 0
+
+    cumulative = (1 + returns).cumprod()
+    peak = cumulative.cummax()
+    drawdown = (cumulative - peak) / peak
+    max_drawdown = drawdown.min()
+
+    return {
+        "Return": annual_return,
+        "Volatility": volatility,
+        "Sharpe": sharpe,
+        "Max Drawdown": max_drawdown
     }
-    """
-
-    summary_df = pd.DataFrame(portfolios_dict)
-
-    return summary_df
 
 def train_test_split_returns(returns, split_date):
     """
@@ -168,3 +175,40 @@ def capm_regression(strategy_returns, benchmark_returns):
     model = sm.OLS(y, X).fit()
 
     return model
+
+
+def calculate_risk_contribution(weights, covariance_matrix):
+    """
+    Computes asset-level contribution to total portfolio volatility.
+
+    Returns:
+    - risk_contribution (absolute contribution)
+    - percentage_contribution (% of total portfolio volatility)
+    """
+
+    # Portfolio volatility
+    portfolio_vol = np.sqrt(weights.T @ covariance_matrix @ weights)
+
+    # Marginal contribution
+    marginal_contribution = covariance_matrix @ weights / portfolio_vol
+
+    # Total contribution
+    risk_contribution = weights * marginal_contribution
+
+    # Percentage contribution
+    percentage_contribution = risk_contribution / portfolio_vol
+
+    return risk_contribution, percentage_contribution
+            
+
+def calculate_rolling_beta(strategy_returns, benchmark_returns, window=126):
+    """
+    Rolling Beta (time-varying market exposure)
+    """
+
+    rolling_cov = strategy_returns.rolling(window).cov(benchmark_returns)
+    rolling_var = benchmark_returns.rolling(window).var()
+
+    rolling_beta = rolling_cov / rolling_var
+
+    return rolling_beta

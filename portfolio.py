@@ -164,3 +164,29 @@ def walk_forward_optimization(returns, train_years=2, test_months=6, risk_free_r
 
     return pd.concat(walk_forward_returns)
 
+import numpy as np
+from scipy.optimize import minimize
+
+
+def risk_parity_weights(cov_matrix):
+    n = len(cov_matrix)
+
+    def portfolio_vol(weights):
+        return np.sqrt(weights.T @ cov_matrix @ weights)
+
+    def risk_contribution(weights):
+        vol = portfolio_vol(weights)
+        marginal = cov_matrix @ weights / vol
+        return weights * marginal
+
+    def objective(weights):
+        rc = risk_contribution(weights)
+        return np.sum((rc - rc.mean())**2)
+
+    constraints = ({'type': 'eq', 'fun': lambda w: np.sum(w) - 1})
+    bounds = tuple((0, 1) for _ in range(n))
+    init_guess = np.ones(n) / n
+
+    result = minimize(objective, init_guess, bounds=bounds, constraints=constraints)
+
+    return result.x

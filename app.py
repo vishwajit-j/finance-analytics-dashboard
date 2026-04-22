@@ -6,6 +6,7 @@ from metrics import (
 from portfolio import optimize_portfolio
 from portfolio import walk_forward_optimization
 from plots import plot_efficient_frontier
+from portfolio import risk_parity_weights
 import numpy as np
 import matplotlib.pyplot as plt
 from metrics import calculate_portfolio_drawdown
@@ -18,6 +19,10 @@ from metrics import calculate_sharpe, calculate_sortino
 from metrics import train_test_split_returns
 from metrics import calculate_beta, calculate_alpha, calculate_information_ratio
 from metrics import capm_regression
+from metrics import calculate_risk_contribution
+from plots import plot_risk_contribution
+from metrics import calculate_rolling_beta
+from plots import plot_correlation_heatmap
 
 
 
@@ -54,6 +59,15 @@ def main():
     test_benchmark = benchmark_returns[benchmark_returns.index >= split_date]
 
     print("\nTrain Period:", train_assets.index.min(), "to", train_assets.index.max())
+    
+    # ----------------------------
+    # Correlation Heatmap (TRAIN)
+    # ----------------------------
+
+    corr_matrix = calculate_correlation_matrix(train_assets)
+
+    plot_correlation_heatmap(corr_matrix)
+    
     print("Test Period:", test_assets.index.min(), "to", test_assets.index.max())
 
     # ----------------------------
@@ -88,6 +102,51 @@ def main():
     for ticker, weight in zip(train_assets.columns, best_weights):
         print(f"{ticker}: {weight:.4f}")
     print(f"Train Sharpe Ratio: {best_sharpe:.4f}")
+
+
+    # ----------------------------
+    # Risk Contribution (TRAIN)
+    # ----------------------------
+
+    cov_matrix = train_assets.cov() * 252  # annualized covariance
+
+    rp_weights = risk_parity_weights(cov_matrix)
+
+    print("\nRisk Parity Portfolio Weights:")
+    for asset, w in zip(train_assets.columns, rp_weights):
+        print(f"{asset}: {w:.4f}")
+
+    rp_returns = test_assets.dot(rp_weights)
+
+    rp_summary = generate_portfolio_summary(rp_returns.to_frame(name="RP"))
+
+    print("\nRisk Parity Performance (OOS):")
+    for k, v in rp_summary.items():
+        if hasattr(v, "item"):
+            v = v.mean()
+        print(f"{k}: {float(v):.4f}")
+
+    risk_contrib, risk_contrib_pct = calculate_risk_contribution(
+        best_weights,
+        cov_matrix
+    )
+
+    print("\nRisk Contribution (Absolute & % of Total Volatility):")
+
+    for asset, rc, pct in zip(train_assets.columns, risk_contrib, risk_contrib_pct):
+        print(f"{asset}: {rc:.4f}  ({pct:.2%})")
+
+
+    print("Plotting Risk Contribution Now...")
+    
+    # Convert to percentage values for plotting
+    risk_pct_values = risk_contrib_pct * 100
+
+    plot_risk_contribution(
+        train_assets.columns,
+        risk_pct_values
+    )
+
 
     # ----------------------------
     # OUT-OF-SAMPLE Evaluation
@@ -159,10 +218,10 @@ def main():
         }
     }
 
-    summary_df = generate_portfolio_summary(portfolio_summary_data)
+    #summary_df = generate_portfolio_summary(portfolio_summary_data)
 
-    print("\n================ OOS Portfolio Comparison ================\n")
-    print(summary_df.round(4))
+    #print("\n================ OOS Portfolio Comparison ================\n")
+    #print(summary_df.round(4))
 
 
     # ----------------------------
@@ -252,6 +311,20 @@ def main():
             "Max Return": rolling_sharpe_max,
         },
         title="Rolling Sharpe Ratio (OOS)"
+    )
+
+    # ----------------------------
+    # Rolling Beta (OOS)
+    # ----------------------------
+
+    rolling_beta = calculate_rolling_beta(
+        best_portfolio_returns,
+        test_benchmark
+    )
+
+    plot_rolling_metric(
+        {"Rolling Beta": rolling_beta},
+        title="Rolling Beta vs SPY"
     )
 
     # ----------------------------
